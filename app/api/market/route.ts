@@ -13,13 +13,14 @@ export async function GET() {
       nepse.setTLSVerification(false);
     }
 
-    const [liveMarket, nepseIndex] = await Promise.all([
+    const [liveMarket, nepseIndex, nepseIndexHistory] = await Promise.all([
       nepse.getLiveMarket(),
       nepse.getNepseIndex(),
+      nepse.getNepseIndexDailyGraph(),
     ]);
 
     return Response.json(
-      { liveMarket, nepseIndex, fetchedAt: new Date().toISOString() },
+      { liveMarket, nepseIndex, nepseIndexHistory, fetchedAt: new Date().toISOString() },
       {
         headers: {
           // Vercel's CDN may reuse a successful response for 60 seconds and

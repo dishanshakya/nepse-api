@@ -10,11 +10,12 @@ A small Next.js serverless API intended for deployment to Vercel. It fetches liv
 {
   "liveMarket": [],
   "nepseIndex": [],
+  "nepseIndexHistory": [[1794546300, 2649.89]],
   "fetchedAt": "2026-01-01T00:00:00.000Z"
 }
 ```
 
-The actual fields and values are provided by the upstream package. Successful responses advertise a 60-second shared cache with up to 5 minutes of stale-while-revalidate. This uses Vercel's CDN cache; it is best-effort, not a durable database, and cache behavior can vary across deployments/regions. Errors return HTTP 502 and are not cached.
+`nepseIndexHistory` contains timestamp/value pairs for the day's index chart. The remaining fields and values are provided by the upstream package. Successful responses advertise a 60-second shared cache with up to 5 minutes of stale-while-revalidate. This uses Vercel's CDN cache; it is best-effort, not a durable database, and cache behavior can vary across deployments/regions. Errors return HTTP 502 and are not cached.
 
 ## Local development
 
