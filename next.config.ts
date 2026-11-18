@@ -5,16 +5,17 @@ import { dirname, join } from "node:path";
 
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
-    "/api/market": ["./.next/server/app/api/data/css.wasm"],
+    "/api/market": ["./.next/server/data/css.wasm"],
   },
   webpack(config, { isServer }) {
     if (isServer) {
       config.plugins.push({
         apply(compiler: webpack.Compiler) {
           compiler.hooks.afterEmit.tap("CopyNepseWasm", () => {
-            // When bundled, @rumess/nepse-api resolves this path relative to
-            // the emitted route chunk. Copy the package asset to that location.
-            const outputFile = join(process.cwd(), ".next/server/app/api/data/css.wasm");
+            // @rumess/nepse-api resolves this asset relative to the emitted
+            // shared server chunk at .next/server/chunks, so it must live in
+            // .next/server/data for both the local server and Vercel function.
+            const outputFile = join(process.cwd(), ".next/server/data/css.wasm");
             mkdirSync(dirname(outputFile), { recursive: true });
             copyFileSync(
               join(process.cwd(), "node_modules/@rumess/nepse-api/dist/data/css.wasm"),
