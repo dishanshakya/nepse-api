@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/market": ["./.next/server/data/css.wasm"],
+    "/api/stocks/[symbol]": ["./.next/server/data/css.wasm"],
   },
   webpack(config, { isServer }) {
     if (isServer) {
