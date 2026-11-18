@@ -13,11 +13,21 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sym
   try {
     const nepse = new Nepse();
     if (process.env.ENABLE_INSECURE_TLS === "true") nepse.setTLSVerification(false);
-    const [details, history] = await Promise.all([
+    const [detailsResult, historyResult] = await Promise.allSettled([
       nepse.getSecurityDetails(symbol),
       nepse.getSecurityPriceVolumeHistory(symbol),
     ]);
-    return Response.json({ details, history: history.content, fetchedAt: new Date().toISOString() }, {
+    const details = detailsResult.status === "fulfilled" ? detailsResult.value : null;
+    const history = historyResult.status === "fulfilled" ? historyResult.value.content : [];
+
+    if (!details && history.length === 0) {
+      throw new Error("NEPSE returned neither security details nor price history");
+    }
+
+    if (detailsResult.status === "rejected") console.error(`Failed to fetch ${symbol} security details:`, detailsResult.reason);
+    if (historyResult.status === "rejected") console.error(`Failed to fetch ${symbol} price history:`, historyResult.reason);
+
+    return Response.json({ details, history, fetchedAt: new Date().toISOString() }, {
       headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
     });
   } catch (error) {
