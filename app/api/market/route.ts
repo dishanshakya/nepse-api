@@ -18,9 +18,15 @@ export async function GET() {
       nepse.getNepseIndex(),
       nepse.getNepseIndexDailyGraph(),
     ]);
+    const securities = liveMarket.length === 0
+      ? await nepse.getSecurityList().catch((error) => {
+          console.error("Failed to fetch fallback security list:", error);
+          return [];
+        })
+      : [];
 
     return Response.json(
-      { liveMarket, nepseIndex, nepseIndexHistory, fetchedAt: new Date().toISOString() },
+      { liveMarket, securities, nepseIndex, nepseIndexHistory, fetchedAt: new Date().toISOString() },
       {
         headers: {
           // Vercel's CDN may reuse a successful response for 60 seconds and
