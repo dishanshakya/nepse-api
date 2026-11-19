@@ -18,15 +18,37 @@ export async function GET() {
       nepse.getNepseIndex(),
       nepse.getNepseIndexDailyGraph(),
     ]);
-    const securities = liveMarket.length === 0
-      ? await nepse.getSecurityList().catch((error) => {
+    let previousMarket: Awaited<ReturnType<typeof nepse.getTodaysPriceVolumeHistory>>["content"] = [];
+    let securities: Awaited<ReturnType<typeof nepse.getSecurityList>> = [];
+    if (liveMarket.length === 0) {
+      // Walk back over weekdays; querying each candidate also naturally skips
+      // exchange holidays because those dates return no quotes.
+      const kathmanduNow = new Date(Date.now() + 5 * 60 * 60 * 1000 + 45 * 60 * 1000);
+      for (let daysBack = 1; daysBack <= 7 && previousMarket.length === 0; daysBack++) {
+        const candidate = new Date(kathmanduNow);
+        candidate.setUTCDate(candidate.getUTCDate() - daysBack);
+        if (candidate.getUTCDay() === 0 || candidate.getUTCDay() === 6) continue;
+        try {
+          const result = await nepse.getTodaysPriceVolumeHistory({
+            businessDate: candidate.toISOString().slice(0, 10),
+            page: 0,
+            size: 1000,
+          });
+          previousMarket = result.content;
+        } catch (error) {
+          console.error(`Failed to fetch NEPSE prices for ${candidate.toISOString().slice(0, 10)}:`, error);
+        }
+      }
+      if (previousMarket.length === 0) {
+        securities = await nepse.getSecurityList().catch((error) => {
           console.error("Failed to fetch fallback security list:", error);
           return [];
-        })
-      : [];
+        });
+      }
+    }
 
     return Response.json(
-      { liveMarket, securities, nepseIndex, nepseIndexHistory, fetchedAt: new Date().toISOString() },
+      { liveMarket, previousMarket, securities, nepseIndex, nepseIndexHistory, fetchedAt: new Date().toISOString() },
       {
         headers: {
           // Vercel's CDN may reuse a successful response for 60 seconds and
